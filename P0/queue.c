@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 int queue_size(queue_t *queue){
-    //start the counter
+    /* start the counter */
     int counter = 0;
     if(queue){
         queue_t *aux = queue;
