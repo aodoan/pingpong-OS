@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 int queue_size(queue_t *queue){
-    /* start the counter */
+    //start the counter
     int counter = 0;
     if(queue){
         queue_t *aux = queue;
@@ -28,13 +28,18 @@ void queue_print(char *name, queue_t *queue, void print_elem(void *))
 {
     if(queue){
         queue_t *aux = queue;
-
+        printf("[");
         do{
             print_elem(aux);
-            printf(" ");
+            
             aux = aux->next;
+            if(aux != queue)
+                printf(" ");
         }while(aux != queue);
-        printf("\n");
+        printf("]\n");
+    }
+    else{
+        printf("[]\n");
     }
 }
 
@@ -47,12 +52,16 @@ void queue_print(char *name, queue_t *queue, void print_elem(void *))
 // Retorno: 0 se sucesso, <0 se ocorreu algum erro
 int queue_append (queue_t **queue, queue_t *elem){
     //check if the element exists
-    if(elem == NULL)
+    if(elem == NULL){
+        fprintf(stderr, "ERRO: o elemento nao existe.\n");
         return 1;
+    }
 
     //check if the element is in another queue
-    if(elem->prev != NULL || elem->next != NULL)
+    if(elem->prev != NULL || elem->next != NULL){
+        fprintf(stderr, "ERRO: o elemento esta em outra fila.\n");
         return 1;
+    }
 
     queue_t *cmp = *queue;
     //if the queue is empty
@@ -103,18 +112,25 @@ int queue_append (queue_t **queue, queue_t *elem){
 // Retorno: 0 se sucesso, <0 se ocorreu algum erro
 
 int queue_remove(queue_t **queue, queue_t *elem){
+    //check if the element exists
+    if(elem == NULL){
+        fprintf(stderr, "ERRO: o elemento nao existe.\n");
+        return 1;
+    }
+
     queue_t *aux = *queue;
     queue_t *first = *queue;
     queue_t *next, *prev;
     //iterates the queue trying to find the element
     if(aux != elem){
         while(aux != elem){
-            
             aux = aux->next;
             //if reaches the first element again
             //that means that the element is not in the queue
-            if(aux == first)
+            if(aux == first){
+                fprintf(stderr, "ERRO: O elemento nao pertence a fila indicada\n");
                 return 1;
+            }
         }
     }
     //if the element was found
