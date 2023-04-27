@@ -63,7 +63,8 @@ void ppos_init(){
     /* create the dispatcher task and remove it from the ready queue */
     task_init(&dispat, dispatcher, NULL);
     queue_remove((queue_t **)&queueR, (queue_t*)&dispat);
-    
+    userTasks--;
+
     /* desativa o buffer da saida padrao (stdout), usado pela função printf */
     setvbuf(stdout, 0, _IONBF, 0);
 }
@@ -204,7 +205,7 @@ task_t* scheduler(){
 } 
 void dispatcher(void* arg){
     /* while has tasks to execute */
-    while(userTasks > 1){
+    while(userTasks > 0){
         /* get the first task */
         task_t *task = scheduler();
         if(task != NULL){
