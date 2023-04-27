@@ -4,6 +4,7 @@
 
 // ESTE ARQUIVO NÃO DEVE SER MODIFICADO - ELE SERÁ SOBRESCRITO NOS TESTES
 
+
 // Interface do núcleo para as aplicações
 
 #ifndef __PPOS__

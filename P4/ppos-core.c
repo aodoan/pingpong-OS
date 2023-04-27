@@ -2,7 +2,10 @@
 #include <stdlib.h>
 #include "ppos.h"
 #include "queue.h"
+
+/* default value for stacksize */
 #define STACKSIZE 64*1024
+
 /* upper and lower bound of priorities */
 #define UPPER_PRIO 20
 #define LOWER_PRIO -20
@@ -11,9 +14,9 @@
 #define ID_MAIN 0
 
 /* status of the task */
-#define READY 'r'
-#define TERMINATED 't'
-#define SUSPENDED 's'
+#define READY 'R'
+#define TERMINATED 'T'
+#define SUSPENDED 'S'
 
 /* struct to save the current task */
 task_t *CurrentTask;
@@ -37,7 +40,7 @@ long int userTasks;
 task_t* queueR = NULL;
 
 
-/* print the id, static and dinamic prioirity of a task *USED ONLY IN DEBUG MODE* */
+/* print the id, static and dinamic prioirity of a task (USED ONLY IN DEBUG MODE) */
 void print_elem(void* ptr){
     task_t *elem = ptr;
     printf("(%i)->[%i]->[%i]", elem->id, elem->static_prio, elem->dinamic_prio);
@@ -47,9 +50,12 @@ void ppos_init(){
     #if defined DEBUG
     printf("ppos_init: iniciando as variaveis\n");
     #endif
+
+
     MainTask.next = NULL;
     MainTask.prev = NULL;
 
+    
     /* set the id of main task as ID_MAIN */
     MainTask.id = ID_MAIN;
     
@@ -78,11 +84,12 @@ int task_init (task_t *task, void  (*start_func)(void *), void   *arg) {
     char *stack;
     stack = malloc(STACKSIZE);
     if(stack){
-        /* fields to manage the context of task */
+        /* fields to manage the context of the task */
         task->context.uc_link = 0;
         task->context.uc_stack.ss_flags = 0;
         task->context.uc_stack.ss_sp = stack;
         task->context.uc_stack.ss_size = STACKSIZE;
+        /* create the context of the task */
         makecontext(&task->context, (void*)(* start_func), 1, arg);
         
         /* fields to manage the TCB queue */
@@ -134,6 +141,8 @@ void task_exit (int exit_code) {
     #endif
     /* if the current task is the dispatcher, back to main */
     if(CurrentTask == &dispat){
+        /* free the alocated memory for the dispatcher */
+        free(dispat.context.uc_stack.ss_sp);
         task_switch(&MainTask);
     }
     /* else, goes to dispatcher */
@@ -145,13 +154,12 @@ void task_exit (int exit_code) {
 int task_id(){
     return CurrentTask->id;
 }
-/* old scheduler (FCS) 
-//return the first element in the ready queue
+
+/* FCS scheduler
 task_t* scheduler(){
     return queueR;
-}
+}*/
 
-*/
 
 task_t* scheduler(){
     /* pointer to iterate the whole queue */
@@ -174,12 +182,14 @@ task_t* scheduler(){
         }
         aux = aux->next;
     }while (aux != queueR);
+
     #ifdef DEBUG
     queue_print ("scheduler: Fila de prontos", (queue_t*) queueR, print_elem) ;
     printf("scheduler: A tarefa escolhida foi: ");
     print_elem(nextTask);
     printf("\n");
     #endif
+
     /* found the task with higher priority (lower number) */
 
     /* set the dinamic priority of nextTask and remove it from the queue */
@@ -203,17 +213,25 @@ task_t* scheduler(){
     }
     return nextTask;
 } 
+
 void dispatcher(void* arg){
     /* while has tasks to execute */
     while(userTasks > 0){
-        /* get the first task */
+        /* get the task with higher priority */
         task_t *task = scheduler();
         if(task != NULL){
-            //queue_remove((queue_t**) &queueR, (queue_t*)task);
+
+            /* decrease the number of ready tasks */
             userTasks--;
             task_switch(task);
-        }
+                
+            /* free the memory if the task was terminated */     
+            if(task->status == TERMINATED){
+                free(task->context.uc_stack.ss_sp);
+
+            }
         
+        }           
     }
     task_exit(0);
 }
@@ -252,7 +270,7 @@ int task_getprio (task_t *task){
     if(task)
         return task->static_prio;
     /* if task is NULL, return the priority of the current task */
-     return CurrentTask->static_prio;
+    return CurrentTask->static_prio;
 }
 
 
