@@ -1,3 +1,8 @@
+/*
+* Código desenvolvido para disciplina de Sistemas Operacionais 
+* pelo aluno Claudinei Aparecido Alduan Filho GRR20203920
+*/
+
 #include "queue.h"
 #include <stdio.h>
 

@@ -1,3 +1,8 @@
+/*
+* Código desenvolvido para disciplina de Sistemas Operacionais 
+* pelo aluno Claudinei Aparecido Alduan Filho GRR20203920
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "ppos.h"
@@ -132,7 +137,7 @@ int task_switch (task_t *task){
     swapcontext(&temp->context, &task->context);
     return 0;
 }
-
+     
 void task_exit (int exit_code) {
     task_t* temp = CurrentTask;
     temp->status = TERMINATED;

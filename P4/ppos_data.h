@@ -1,3 +1,8 @@
+/*
+* Código desenvolvido para disciplina de Sistemas Operacionais 
+* pelo aluno Claudinei Aparecido Alduan Filho GRR20203920
+*/
+
 // PingPongOS - PingPong Operating System
 // Prof. Carlos A. Maziero, DINF UFPR
 // Versão 1.5 -- Março de 2023
