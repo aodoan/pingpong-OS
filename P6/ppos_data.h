@@ -39,7 +39,7 @@
 /* inital amount of quantum that a task receive */
 #define INITAL_QUANTUM 20
 
-#define ll long long
+
 // Estrutura que define um Task Control Block (TCB)
 typedef struct task_t
 {
@@ -54,6 +54,11 @@ typedef struct task_t
   int quanta_left; // total de quantum que falta para tarefa deixar a CPU
   int task_nature; // indica se a tarefa eh do sistema ou do usuario 
   
+  /* time related fields */
+  unsigned int birth_time; // indica o momento em que a tarefa foi criada
+  unsigned int death_time; // indica o momento em que a tarefa foi encerrada
+  unsigned int running_time; // indica o tempo que a tarefa gastou sendo processada
+  unsigned int activations; // indica o numero de vezes que a tarefa ganhou o processador
   // ... (outros campos serão adicionados mais tarde)
 } task_t ;
 
