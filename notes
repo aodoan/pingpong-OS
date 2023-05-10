@@ -1,0 +1,136 @@
+				Parte III
+			Interação entre tarefas
+
+cap 8 Comunicação entre tarefas
+algumas aplicações mais complexas usam mais de uma tarefa (tarefas 
+independetes) que cooperam entre si para atingir os objetivos da aplicação.
+-> navegador de internet
+-> pode vários processos com várias threads cada.
+
+atender varios usuarios, uso de computador multiprocessador (paralelismo ),
+modularidade (mais facil de ser construido)
+
+COMUNICAÇÃO 
+-> é facil se estiverem no processo (váriabel global)
+comunicação entre tarefas no mesmo processo (intraprocesso)
+comunicação entre tarefas em diferentes procesos (interprocesso)
+comunicação entre tarefas em diferentes computadore (intersistemas) -> rede
+
+tipos de comunicação
+direta x indireta
+DIRETA (dados, destino)
+INDIRETA (dados, origem)
+
+a comunicação direta é quando o emissor identifica claramente o receptor.
+a comunicação indireita usa um CANAL. (quase todos os sistemas usam)
+
+
+SINCRONISMO
+(+) enviar
+(-) receber
+ COMUNICAÇÃO DIRETA
+emissor               receptor
+|                     |		
+|                     |		
+|                     |		
+|        DADOS        |		
++ ------------------> -		
+|                     |		
+|                     |		
+|                     |		
+|                     |		
+	
+					
+COMUNICAÇÃO INDIRETA
+emissor               receptor
+|                     |		
+|                     |		
+|                     |		
+| DADOS  canal  DADOS |		
++ ------| | | |-----> -		
+|                     |		
+|                     |		
+|                     |		
+|                     |		
+	
+COMUNICAÇÃO ASSINCRONA (não-bloqueante)
+emissor               receptor
+|                     |	             (1) da erro, o receptor nao quer 	
++(1)                  |	  	     receber.
+|                     |		
+|                     -(2)	     (2) da erro pois o emissor não esta
+|                     |		     enviando nada.
+|        DADOS        |		
++ ------------------> -		
+|                     |		
+|                     |				
+
+comunicação claramente ineficiente, só funcionaria quando as duas tarefas estão exatamanete sincronizadas
+
+COMUNICAÇÃO SINCRONA (bloqueante)
+= -> espera
+emissor              receptor
+|                     |		
++                     |		
+=                     |	
+=                     |		
+=                     |		
+=                     |		
+=        DADOS        |		
++ ------------------> -		
+|                     |		
+
+o emissor fica esperando o receptor requerir o dado para continuar sua execução
+
+COMUNICAÇÃO SEMISSÍNCRONA (semi-bloqueante)
+
+emissor               receptor
+|                     |		
++                     |		(1) acabou a espera do emissor, continua a 
+=                     |		execução
+=                     |		
+=                     |		
+|(1)                  |		
+|                     |		
+|                     |		
+|        DADOS        |		
++ ------------------> -		
+|                     |		
+|                     |		
+|                     |		
+|                     |	
+
+
+Formato de envio
+podem ser enviados atraves de pacotes (mensagens) [ab][1234][xyz]
+podem ser enviados atraves de fluxo de mensagens ab1234xyz
+-> nao há separação lógica entre os dados enviados, eles podem ser lidos
+de byte em byte ou grandes blocos, quem deciede é o receptor
+
+capacidade dos canais
+capacidade nula (n=0) -> o canal não guarda nenhum byte (comunicação direta)
+capacidade infinita (n=inf) -> o emissor sempre pode guardar dados buffer
+-> logicamente nao existe na vida real, usado para projetar (assume que o buffer sempre terá espaço.
+capacidade finita (0<n<inf) -> o buffer tem uma capacicade finita
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	
