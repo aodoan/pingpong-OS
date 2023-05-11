@@ -282,8 +282,8 @@ emissor               receptor
 + ------------------> -		
 |                     |		
 |                     |		
-|                     |		
-|                     |	
+|                     |
+|                     |
 
 
 Formato de envio
@@ -299,3 +299,5 @@ capacidade infinita (n=inf) -> o emissor sempre pode guardar dados buffer
 capacidade finita (0<n<inf) -> o buffer tem uma capacicade finita
 
  
+
+
