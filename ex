@@ -394,23 +394,3 @@ Mutex -> inicia com 0 ou 1 .Semaforos simplficados para exclusao mutua (dai vem 
 No restante dos casos o semaforo eh inicializado com n > 1
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
