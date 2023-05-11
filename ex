@@ -1,6 +1,7 @@
 Alguns exercicios feitos por mim do livro da disciplina.
 CAPS FEITOS 1, 2, 4, 5, 6, 7, 8, 9, 10
 
+
 uma de escalonamento, uma de threads vs processos, uma de semaforos, uma de impasse
 
 Cap 1 - Conceitos Basicos
