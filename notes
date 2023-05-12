@@ -1,3 +1,188 @@
+Parte I - Introdução
+
+cap 1 conceitos basicos
+Um computador é hardware (circuitos eletronicos) e software (codigo, no caso Sistema Operacional)
+
+(I) uma das funcoes do SO é oferecer abstração para os desenvolvedores com os recursos do sistema, como portas de
+entrada por exemplo (ABSTRAIR RECURSOS)
+
+ APLICAÇÕES
+------------
+     SO  
+------------
+  HARDWARE
+
+
+(I - cont) fazer com que aplicativos funcionem em hardwares diferentes (padronizacao)
+		-> ler o arquivo de um USB e de um SSD deve ser o mesmo para o computador
+
+Gerência de Recursos:
+O número de tarefas rodando é maior que o número de unidades de processamento, logo o SO deve gerenciar as 
+diversas tarefas executando simultaneamente.
+		-> "gerenciar" -> dar tempo de CPU e gerenciar a memória - isolar a memória de cada tarefa
+										+ segurança
+
+POLÍTICA X MECANISMO
+
+politica -> aspectos de DECISÃO (passivel de mudança) | alto nivel 
+exemplo: o QUANTO de memória uma aplicação recebe
+
+mecanismo -> procedimento de BAIXO NÍVEL que IMPLEMENTA AS POLÍTICAS
+exemplo: atribuir uma região de memória a uma aplicação
+
+categorias de um SO.
+
+cap 2 Estrutura de um SO
+
+Núcleo (kernel): coração do SO  -> gerencia recursos dos hardwares
+				-> cria abstrações para aplicações
+
+boot code: inicia o sistema e carrega o kernel
+
+drivers: códigos específicos para tratar dispositivos físicos (construido pelo fabricante do dispositivo)
+
+programas utilitarios: facilitam o uso do sistema (ls, terminal, interface grafica)
+
+ESTRUTURA TÍPICA
+
+APLICATIVOS / PROGRAMAS UTILITÁRIOS (USER SPACE)
+------------------------------------------------
+KERNEL                              (SYSTEM)
+boot code | drivers
+------------------------------------------------
+CONTROLADORES DE DISPOSITIVO
+DISPOSITIVOS FÍSÍCOS
+
+o código do kernel executa de modo privilegiado. todos os outros modo usuário.
+
+INTERRUPÇÕES:
+dispositivos externos fazem PEDIDOS DE INTERRUPÇÃO ao processador, desviando o fluxo de execução para um código
+para tratar as interrupções
+
+exemplo: o controlador de ethernet ao receber um pacote
+
+Níveis de privilégio (nao confundir com prioridade)
+
+3 APLICAÇÕES
+-------------
+2, 1 Ñ USADOS
+-------------
+0 KERNEL
+
+no nível kernel, o código executado tem acesso a todas as funcionalidades do sistema (GOD MODE)
+->kernel, drivers e boot code
+
+no nível usuario, o código tem uma série de restrições que não podem ser violadas
+-> utilitarios e aplicativos
+
+
+É a MMU (gerência de memória) que que cria uma área de memória isolada para cada aplicação. impedindo que uma 
+aplicação "veja" a área da outra (usa memória virtual...)
+
+syscalls (chamdas de sistema) -> implementado com interrupções
+para a aplicação usar algum recurso não disponivel no user space -> SYSCALL
+
+cap 3 - arquitetura de um SO
+tipos de arquiteturas de SO
+(+) -> vantagem
+(-) -> desvantagem
+(I) sistema monolitico: o kernel é imenso
++ rápido   - complexo
+           - propenso a erros
+
+(II) microkernel: o kernel é o menor possivel
++ facil de desenvolver    - lento
++ modular                 
+
+(III) sistemas em camadas: hierarquias tipo o modelo OSI
+
+(IV) sistema hibrido -> linux e windows
+junta I II e III
+
+(V) máquina virtual -> simula um sistema dentro de outro
+        
+Parte II - Gestão de Tarefas
+
+Conceito de tarefa
+programa: sequência ESTÁTICA de código (receita)
+
+tarefa: execução de um programa; DINÂMICO 
+-> pode ser implementado atraves de tarefas, threads, ....
+
+gerência de tarefas:
+sistema monotarefa: uma tarefa por vez
+
+======================================
+= new ----> running ----> terminated =
+======================================
+
+logicamente ineficiente
+
+sistema multitarefa
+
+=============================================================
+=  new ----> ready --------------> running ----> terminated =
+=              |                      |                     =
+=              <--- Suspended  	<------                     =
+=============================================================
+
+enquanto a tarefa espera por alguma coisa ela vai para o estado suspensa
+-> existe um monitor que gerencia os estados
+
+*uma tarefa pode paralizar a CPU
+imagine um loop infinito que nunca vai para o estado suspenso
+solucao: preempção por tempo (time sharing) """preempção = arrancar"""
+
+cada tarefa recebe uma "fatia" de tempo - denominado quantum - quando seu tempo acaba, outra tarefa toma o lugar
+
+
+=============================================================
+=              <--- PREEMPÇÃO  	<------                     =
+=              |                      |                     =
+=  new ----> ready --------------> running ----> terminated =
+=              |                      |                     =
+=              <--- Suspended  	<------                     =
+=============================================================
+
+Cap 5 Implementação de Tarefas (contexto, processo, thread)
+contexto-> estado interno da tarefa
+-> informacoes que sao armazenadas para uma tarefa executar (registradores rbp, rsp, sp, ip..., arquivos abertos
+, etc...)
+
+TCB -> Task Control Block -> Struct que contem todos os campos
+
+troca de contexto - context_switch
+->para uma tarefa e excuta outra
+|1| salva o contexto da tarefa atual
+|2| escolhe a proxima (scheduler)
+|3| restaura o conetxto da proxima tarefa
+
+dispatcher -> implementa troca de contexto MECANISMO
+scheduler -> escolhe a ordem das tarefas   POLÍTICA
+
+PROCESSO -> bloco de recursos 
+p/ criar processo no UNIX
+fork() duplica o processo atual
+execv(file) troca a area de codigo executavel do processor por outro codigo (FILE)
+
+thread (fio) -> fluxo de execução (TODO PROCESSO TEM UMA THREAD POR DEFAULT)
+um processo pode ter várias threads fazendo coisas diferentes
+
+MODELOS DE THREAD
+N:1 MUITOS PRA UM 
+cada processo roda uma thread por vez (ganha uma thread no kernel)
+é administrado com uma thread library no processo
+INJUSTA
+
+modelo 1:1 UM PRA UM *USADO NO LINUX*
+cada thread no processo ganha uma thread no kernel
+escala mal
+JUSTA
+
+modelo N:M MUITOS PRA MUITOS
+cada processo pode criar mais threads no kernel
+escala bem
+
 				Parte III
 			Interação entre tarefas
 
@@ -97,8 +282,8 @@ emissor               receptor
 + ------------------> -		
 |                     |		
 |                     |		
-|                     |		
-|                     |	
+|                     |
+|                     |
 
 
 Formato de envio
@@ -116,21 +301,3 @@ capacidade finita (0<n<inf) -> o buffer tem uma capacicade finita
  
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
-	
