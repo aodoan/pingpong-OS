@@ -47,8 +47,8 @@ void ppos_init(){
     printf("ppos_init: iniciando as variaveis\n");
     #endif
 
-    action.sa_handler = routine ;
-    action.sa_flags = 0 ;
+    action.sa_handler = routine;
+    action.sa_flags = 0;
 
     if (sigaction (SIGALRM, &action, 0) < 0)
     {

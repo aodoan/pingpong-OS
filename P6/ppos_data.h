@@ -26,6 +26,9 @@
 /* default id of main */
 #define ID_MAIN 0
 
+/* define the initial value of id */
+#define INITIAL_ID 1
+
 /* status of the task */
 #define READY 'R'
 #define TERMINATED 'T'
@@ -39,27 +42,34 @@
 /* inital amount of quantum that a task receive */
 #define INITAL_QUANTUM 20
 
+/* value of quanta (in ms) */
+#define QUANTA 1000
+
 
 // Estrutura que define um Task Control Block (TCB)
 typedef struct task_t
 {
-  struct task_t *prev, *next ;		// ponteiros para usar em filas
-  int id ;				// identificador da tarefa
-  ucontext_t context ;			// contexto armazenado da tarefa
-  short status ;			// pronta, rodando, suspensa, ...
-  
-  //CAMPOS ADICIONADOS
-  int static_prio; // prioridade estatica
-  int dinamic_prio; // prioridade dinamica
-  int quanta_left; // total de quantum que falta para tarefa deixar a CPU
-  int task_nature; // indica se a tarefa eh do sistema ou do usuario 
-  
-  /* time related fields */
-  unsigned int birth_time; // indica o momento em que a tarefa foi criada
-  unsigned int death_time; // indica o momento em que a tarefa foi encerrada
-  unsigned int running_time; // indica o tempo que a tarefa gastou sendo processada
-  unsigned int activations; // indica o numero de vezes que a tarefa ganhou o processador
-  // ... (outros campos serão adicionados mais tarde)
+	/* campos fornecidos pelo professor */ 
+ 	struct task_t *prev, *next ;		// ponteiros para usar em filas
+  	int id ;				// identificador da tarefa
+  	ucontext_t context ;			// contexto armazenado da tarefa
+  	short status ;			// pronta, rodando, suspensa, ...
+/* ------------------------------------------------------------------------------------------------ */
+
+	/* campos adicionados */
+	/* priority related fields */
+  	int static_prio; // prioridade estatica
+  	int dinamic_prio; // prioridade dinamica
+  	
+  	
+  	/* time related fields */
+  	int quanta_left; // total de quantum que falta para tarefa deixar a CPU
+  	int task_nature; // indica se a tarefa eh do sistema ou do usuario 
+  	unsigned int birth_time; // indica o momento em que a tarefa foi criada
+  	unsigned int death_time; // indica o momento em que a tarefa foi encerrada
+  	unsigned int running_time; // indica o tempo que a tarefa gastou sendo processada
+  	unsigned int activations; // indica o numero de vezes que a tarefa ganhou o processador
+  	// ... (outros campos serão adicionados mais tarde)
 } task_t ;
 
 // estrutura que define um semáforo
