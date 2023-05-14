@@ -25,7 +25,10 @@ struct itimerval timer;
 /* timer global variable */
 unsigned int TIME;
 
+/* declaration of dispatcher */
 void dispatcher(void* arg);
+
+/* declatarion of routine */
 void routine (int signum);
 
 /* variable to store the next id */
@@ -40,7 +43,7 @@ task_t* queueR = NULL;
 
 /* print the id, static and dinamic prioirity of a task (USED ONLY IN DEBUG MODE) */
 void print_elem(void* ptr){
-    task_t *elem = ptr;
+  	task_t *elem = ptr;
     printf("(%i)->[%i]->[%i]", elem->id, elem->static_prio, elem->dinamic_prio);
 }
 
@@ -50,20 +53,19 @@ void ppos_init(){
     #endif
 
     TIME = 0;
-    action.sa_handler = routine ;
-    action.sa_flags = 0 ;
+    action.sa_handler = routine;
+    action.sa_flags = 0;
 
-    if (sigaction (SIGALRM, &action, 0) < 0)
-    {
+    if (sigaction (SIGALRM, &action, 0) < 0){
         perror ("Erro em sigaction: ") ;
         exit (1) ;
     }
 
     // ajusta valores do temporizador
-    timer.it_value.tv_usec = 1000 ;      // primeiro disparo, em micro-segundos
-    timer.it_value.tv_sec  = 0;      // primeiro disparo, em segundos
-    timer.it_interval.tv_usec = 1000 ;   // disparos subsequentes, em micro-segundos
-    timer.it_interval.tv_sec  = 0 ;   // disparos subsequentes, em segundos
+    timer.it_value.tv_usec = QUANTA;      // primeiro disparo, em micro-segundos
+    timer.it_value.tv_sec = 0;      // primeiro disparo, em segundos
+    timer.it_interval.tv_usec = QUANTA;   // disparos subsequentes, em micro-segundos
+    timer.it_interval.tv_sec = 0;   // disparos subsequentes, em segundos
 
     // arma o temporizador ITIMER_REAL
     if (setitimer (ITIMER_REAL, &timer, 0) < 0)
@@ -79,9 +81,9 @@ void ppos_init(){
     /* set the id of main task as ID_MAIN */
     MainTask.id = ID_MAIN;
     
-    /* increment id (to be used in the next task) */
-    id = 0;
-    id++;
+    /* define the id as the initial value (to be used in the next task) */
+    id = INITIAL_ID;
+ 
 
     /* set the main as current task */
     CurrentTask = &MainTask;
@@ -114,6 +116,7 @@ int task_init (task_t *task, void  (*start_func)(void *), void   *arg) {
         task->context.uc_stack.ss_flags = 0;
         task->context.uc_stack.ss_sp = stack;
         task->context.uc_stack.ss_size = STACKSIZE;
+
         /* create the context of the task */
         makecontext(&task->context, (void*)(* start_func), 1, arg);
         
@@ -159,7 +162,9 @@ int task_init (task_t *task, void  (*start_func)(void *), void   *arg) {
 }
 
 int task_switch (task_t *task){
+    /* increasce the number of times that the task won the CPU */
     CurrentTask->activations++;
+
     task_t *temp = CurrentTask;
     #ifdef DEBUG
     printf("task_switch: trocando contexto %i -> %i\n", temp->id, task->id);
@@ -191,15 +196,10 @@ void task_exit (int exit_code) {
     }
 }
 
+/* return the id of the current task*/
 int task_id(){
     return CurrentTask->id;
 }
-
-/* FCS scheduler
-task_t* scheduler(){
-    return queueR;
-}*/
-
 
 task_t* scheduler(){
     /* pointer to iterate the whole queue */
@@ -267,6 +267,8 @@ void dispatcher(void* arg){
             
             /* set the quanta */
             task->quanta_left = INITAL_QUANTUM;
+            
+            /* switch to the task */
             task_switch(task);
                 
             /* free the memory if the task was terminated */     
@@ -327,11 +329,16 @@ void routine (int signum){
         CurrentTask->quanta_left--;
         /* the task spent all the quantas */
         if(CurrentTask->quanta_left <= 0){
+            /* insert the task in ready queue */ 
             queue_append((queue_t**)&queueR, (queue_t *)CurrentTask);
             
+            /* increment the amount of ready tasks */
             userTasks++;
+
+            /* set the status of the task to ready */
             CurrentTask->status = READY;
             
+            /* switch to the dispatcher */
             task_switch(&dispat);
         }
     }
