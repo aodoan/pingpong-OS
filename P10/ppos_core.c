@@ -421,7 +421,7 @@ void task_suspended (task_t **queue){
 
     
     /* insert on the new queue */
-    queue_append((queue_t **)&queueS, (queue_t*) CurrentTask);
+    queue_append((queue_t **)queue, (queue_t*) CurrentTask);
     #ifdef DEBUG
     queue_print ("task_suspend: Fila de suspensos: ", (queue_t*) queueS, print_elem_id) ;
     #endif
@@ -435,7 +435,7 @@ void task_resume (task_t *task, task_t **queue){
     queue_print ("Fila de suspensos: ", (queue_t*) queueS, print_elem_id) ;
     #endif
     /* remove from the suspended queue */
-    queue_remove((queue_t**) &queueS, (queue_t*) task);
+    queue_remove((queue_t**) queue, (queue_t*) task);
     /* insert on the ready queue */
     queue_append((queue_t **) &queueR, (queue_t*) task);
 
@@ -496,3 +496,58 @@ void awake_tasks_time(){
     }
 }
 
+int sem_init(semaphore_t *s, int value){
+    s->value = value;
+    /* start the queue with NULL */
+    s->queue = NULL;
+    return 0;
+}
+
+int sem_down(semaphore_t *s){
+    /* prevents that the task is preempted */
+    CurrentTask->atomic = 1;
+
+    s->value--;
+    /* the task can proceed normaly */
+    if(s->value >= 0){
+        CurrentTask->atomic = 0;
+        return 0;
+    }
+    /* the task need to be suspended */
+    else{
+        CurrentTask->status = SUSPENDED;
+        /* insert on the queue */
+        queue_append((queue_t**) &s->queue, (queue_t *) CurrentTask);
+        task_switch(Dispat);
+        return 0;
+    }
+
+}
+
+int sem_up(semaphore_t *s){
+    task_t *first_task = s->queue;
+    CurrentTask->atomic = 1;
+    s->value++;
+    /* opened a space in the semaphore, awakens the first task and send to the ready queue */
+    if(s->value <= 0){
+        task_resume(first_task, (task_t **) &s->queue);
+    }
+    CurrentTask->atomic = 0;
+    return 0;
+}
+
+int sem_destroy(semaphore_t *s){
+    task_t *aux = s->queue, *aux2;
+    printf("passei por aqui\n");
+    while(aux){
+        aux2 = aux;
+        if(aux != aux->next){
+            aux = aux->next;
+        }
+        else{
+            aux = NULL;
+        }
+        task_resume(aux2, (task_t **) &s->queue);
+    }
+    return 0;
+}
