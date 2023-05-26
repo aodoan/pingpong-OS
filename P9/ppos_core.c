@@ -30,9 +30,10 @@ unsigned int TIME;
 /* declaration of dispatcher */
 void dispatcher(void* arg);
 
-/* declatarion of routine */
+/* declatarion of functions */
 void routine (int signum);
 void awake_tasks_time();
+
 /* variable to store the next id */
 long int id;
 
@@ -62,6 +63,7 @@ void ppos_init(){
     printf("ppos_init: iniciando as variaveis\n");
     #endif
 
+    /* set the initial value of TIME */
     TIME = 0;
     action.sa_handler = routine;
     action.sa_flags = 0;
@@ -84,25 +86,14 @@ void ppos_init(){
         exit (1) ;
     }
 
-/*
-    MainTask.next = NULL;
-    MainTask.prev = NULL;
-    MainTask.atomic = 0;
-    MainTask.flag = 0;
-*/  
-    /* set the id of main task as ID_MAIN */
-    MTask->id = ID_MAIN;
-    
     /* define the id as the initial value (to be used in the next task) */
-    id = 0;
+    id = ID_MAIN;
 
     /* set the main as current task */
     CurrentTask = MTask;
-    /*
-    queue_append((queue_t **)&queueR, (queue_t*) CurrentTask);
-    userTasks++;
-    */
+    /* inser the main taks in the ready queue */
     task_init(MTask, NULL, NULL);
+
     /* create the dispatcher task and remove it from the ready queue */
     task_init(Dispat, dispatcher, NULL);
     queue_remove((queue_t **)&queueR, (queue_t*)Dispat);
@@ -139,16 +130,12 @@ int task_init (task_t *task, void  (*start_func)(void *), void   *arg) {
         task->context.uc_stack.ss_size = STACKSIZE;
 
         /* create the context of the task */
-        if(start_func != NULL){
-            makecontext(&task->context, (void*)(* start_func), 1, arg);
-            task->id = id;
-            
-        }
-        else{
+        if(start_func != NULL)
+            makecontext(&task->context, (void*)(* start_func), 1, arg);          
+        else
             task->context = ContextMain;
-            task->id = 0;
-        }
-        id++;
+        
+        
         /* fields to manage the TCB queue */
         task->next = NULL;
         task->prev = NULL;
@@ -157,7 +144,8 @@ int task_init (task_t *task, void  (*start_func)(void *), void   *arg) {
         task->status = READY;
 
         /* set the id of the task and increment to use in the next task */
-        
+        task->id = id;
+        id++;
         
         task->static_prio = 0;
         task->dinamic_prio = 0;
