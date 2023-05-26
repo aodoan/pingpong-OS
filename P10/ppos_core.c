@@ -539,6 +539,8 @@ int sem_up(semaphore_t *s){
 int sem_destroy(semaphore_t *s){
     task_t *aux = s->queue, *aux2;
     printf("passei por aqui\n");
+    queue_print("fila do semaforo", (queue_t *) s->queue, print_elem_id);
+    queue_print("fila de prontos: ", (queue_t *) queueR, print_elem_id);
     while(aux){
         aux2 = aux;
         if(aux != aux->next){
@@ -549,5 +551,7 @@ int sem_destroy(semaphore_t *s){
         }
         task_resume(aux2, (task_t **) &s->queue);
     }
+    queue_print("fila do semaforo", (queue_t *) s->queue, print_elem_id);
+    queue_print("fila de prontos: ", (queue_t *) queueR, print_elem_id);
     return 0;
 }
