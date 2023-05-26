@@ -99,11 +99,11 @@ void ppos_init(){
     queue_remove((queue_t **)&queueR, (queue_t*)Dispat);
     userTasks--;
 
-
-    
-
     /* desativa o buffer da saida padrao (stdout), usado pela função printf */
     setvbuf(stdout, 0, _IONBF, 0);
+
+    /* goes to the dispatcher and start to run the tasks */
+    task_switch(Dispat);
 }
 
 int task_init (task_t *task, void  (*start_func)(void *), void   *arg) {
@@ -397,7 +397,7 @@ void routine (int signum){
         if(CurrentTask->quanta_left <= 0){
             /* insert the task in ready queue */
             queue_append((queue_t**)&queueR, (queue_t *)CurrentTask);
-            
+           
             /* set the status of the task to ready */
             CurrentTask->status = READY;
             
