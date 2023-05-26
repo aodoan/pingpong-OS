@@ -61,7 +61,7 @@ int main (int argc, char *argv[])
    // destroi semaforos
    sem_destroy (&s1) ;
    sem_destroy (&s2) ;
-
+   
    // aguarda a2, b1 e b2 encerrarem
    task_wait (&a2) ;
    task_wait (&b1) ;

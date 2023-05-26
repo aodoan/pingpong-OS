@@ -51,14 +51,16 @@ void print_elem(void* ptr){
         task_t *elem = ptr;
     printf("(%i)->[%i]->[%i]", elem->id, elem->static_prio, elem->dinamic_prio);
 }
-
-
 /* print the id, all tasks (USED ONLY IN DEBUG MODE) */
 void print_elem_id(void* ptr){
         task_t *elem = ptr;
     printf("(%i) ", elem->id);
 }
-void ppos_init(){
+void imprime_lista_prontos(){
+    queue_print("fila de prontos: ", (queue_t *) queueR, print_elem_id);
+}
+
+ void ppos_init(){
     #if defined DEBUG
     printf("ppos_init: iniciando as variaveis\n");
     #endif
@@ -336,7 +338,7 @@ void dispatcher(void* arg){
 
                 /* free the memory if the task was terminated */     
                 if(task->status == TERMINATED){
-                    free(task->context.uc_stack.ss_sp);
+                    //free(task->context.uc_stack.ss_sp);
 
                 }
         
@@ -419,7 +421,6 @@ void task_suspended (task_t **queue){
     /* set the task status as SUSPENDED*/
     CurrentTask->status = SUSPENDED;
 
-    
     /* insert on the new queue */
     queue_append((queue_t **)queue, (queue_t*) CurrentTask);
     #ifdef DEBUG
@@ -434,11 +435,12 @@ void task_resume (task_t *task, task_t **queue){
     printf("task_resume: tirando a tarefa %i %i ", task->id, task->wake_time);
     queue_print ("Fila de suspensos: ", (queue_t*) queueS, print_elem_id) ;
     #endif
+    int a = 0, b = 0;
     /* remove from the suspended queue */
-    queue_remove((queue_t**) queue, (queue_t*) task);
+    a = queue_remove((queue_t**) queue, (queue_t*) task);
+   
     /* insert on the ready queue */
-    queue_append((queue_t **) &queueR, (queue_t*) task);
-
+    b = queue_append((queue_t **) &queueR, (queue_t*) task);
     /* set the status back to READY */
     task->status = READY;
     /* set the atomic flag as 1 */
@@ -537,21 +539,6 @@ int sem_up(semaphore_t *s){
 }
 
 int sem_destroy(semaphore_t *s){
-    task_t *aux = s->queue, *aux2;
-    printf("passei por aqui\n");
-    queue_print("fila do semaforo", (queue_t *) s->queue, print_elem_id);
-    queue_print("fila de prontos: ", (queue_t *) queueR, print_elem_id);
-    while(aux){
-        aux2 = aux;
-        if(aux != aux->next){
-            aux = aux->next;
-        }
-        else{
-            aux = NULL;
-        }
-        task_resume(aux2, (task_t **) &s->queue);
-    }
-    queue_print("fila do semaforo", (queue_t *) s->queue, print_elem_id);
-    queue_print("fila de prontos: ", (queue_t *) queueR, print_elem_id);
+    
     return 0;
 }
