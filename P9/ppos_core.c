@@ -117,7 +117,7 @@ int task_init (task_t *task, void  (*start_func)(void *), void   *arg) {
     if(stack){
         task->atomic = 0;
         task->flag = 0;
-        task->id_espera = -1;
+        task->wait_id = -1;
         /* set the birth time of the task */
         task->birth_time = TIME;
         task->running_time = 0;
@@ -187,6 +187,7 @@ int task_switch (task_t *task){
     #ifdef DEBUG
     printf("task_switch: trocando contexto %i -> %i\n", temp->id, task->id);
     #endif
+    /* set the task as current task */
     CurrentTask = task;
     swapcontext(&temp->context, &task->context);
     return 0;
@@ -194,15 +195,17 @@ int task_switch (task_t *task){
      
 void awake_tasks_id (int id){
     task_t *aux = queueS, *aux2;
+    /* indicates if the suspended queue is empty */
     int f = 0;
     do{        
-        if(aux->id_espera == id){
+        if(aux->wait_id == id){
             aux2 = aux;
 
+            /* if the queue has one element */
             if(aux == aux->next){
                 f = 1;
             }
-            aux->id_espera = 0;
+            aux->wait_id = 0;
             aux = aux->next;
             
             #ifdef DEBUG
@@ -212,39 +215,46 @@ void awake_tasks_id (int id){
             
         }
         else
+            /* else, iterates the queue */
             aux = aux->next;
 
     }while(aux != queueS && f == 0);
     
 }
 void task_exit (int exit_code) {
-    
-    /* check if any other tasks must be awaken */
+    /* check if there are tasks waiting for current task to end */
     if(CurrentTask->flag == 1){
         awake_tasks_id(CurrentTask->id);
     }
+    /* decrease the number of user tasks*/
+    userTasks--;
+    
+    /* store the exit code in the TCB */
     CurrentTask->exit_code = exit_code;
+    
+    /* set the death_time */
     CurrentTask->death_time = TIME;
+    
+    /* prints the exit message */
     printf("Task %d exit: execution time %d ms, processor time %d ms, %d activations\n"
     , CurrentTask->id, CurrentTask->death_time-CurrentTask->birth_time, CurrentTask->running_time,CurrentTask->activations);
+    
     task_t* temp = CurrentTask;
+    
+    /* set the status as TERMINATED */
     temp->status = TERMINATED;
+    
     #ifdef DEBUG
     printf("task_exit: tarefa %i sendo encerrada, com exit_code %i \n", temp->id, exit_code);
     #endif
-    userTasks--;
 
-    /* if the current task is the dispatcher, back to main */
-    if(CurrentTask == Dispat){
-        /* free the alocated memory for the dispatcher */
-        
+    /* if the dispatcher called task_exit, that means that there are no more tasks in the system. exit*/
+    if(CurrentTask == Dispat)
         exit(0);
-        
-    }
+    
     /* else, goes to dispatcher */
-    else{
-        task_switch(Dispat);
-    }
+    else
+        task_switch(Dispat);    
 }
 
 /* return the id of the current task*/
@@ -258,8 +268,6 @@ task_t* scheduler(){
     task_t* nextTask = NULL;
     /* variable that store the max priority (to compare) */
     int min = UPPER_PRIO + 1;
-
-
     do{
         /* the dinamic priority is lower than the min */
         if(aux->dinamic_prio < min){
@@ -273,6 +281,7 @@ task_t* scheduler(){
         }
         aux = aux->next;
     }while (aux != queueR);
+    /* found the task with higher priority (lower number) */
     
     #ifdef DEBUG
     queue_print ("scheduler: Fila de prontos", (queue_t*) queueR, print_elem) ;
@@ -281,11 +290,10 @@ task_t* scheduler(){
     printf("\n");
     #endif
 
-    /* found the task with higher priority (lower number) */
-
     /* set the dinamic priority of nextTask and remove it from the queue */
     nextTask->dinamic_prio = nextTask->static_prio;
 
+    /* remove it from the ready queue */
     queue_remove((queue_t**) &queueR, (queue_t*)nextTask);
     
     /* lower the dinamic priority of all other tasks */
@@ -379,7 +387,7 @@ int task_getprio (task_t *task){
 
 /* its called in every tick of the clock */
 void routine (int signum){
-    /* increment the global variable TIME */
+    /* increment the global variable TIME and cpu time of the task */
     TIME++;
     CurrentTask->running_time++;
     /* if is a system task, ignores it */
@@ -447,7 +455,7 @@ int task_wait(task_t *task){
     if(CurrentTask->status != SUSPENDED && task->status != TERMINATED){
         CurrentTask->atomic = 1;
         /* saves the id to be awake after */
-        CurrentTask->id_espera = task->id;
+        CurrentTask->wait_id = task->id;
         task->flag = 1;
         /* SUSPEND THE TASK */
         task_suspended(&queueS);
@@ -469,15 +477,18 @@ void task_sleep(int t){
 
 void awake_tasks_time(){
     task_t *aux = queueS, *aux2;
+    /* flag that shows that the queue is empty */
     int f = 0;
     if(queueS){
         do{
-            if(aux->wake_time <= TIME && aux->id_espera < 0){
+            /* just awake the task if was suspended with task_wait */
+            if(aux->wake_time <= TIME && aux->wait_id < 0){
                 aux2 = aux;
                 if(aux == aux->next){
                     f = 1;
                 }
                 aux = aux->next;
+                /* resume the task */
                 task_resume(aux2, &queueS);
             }
             else

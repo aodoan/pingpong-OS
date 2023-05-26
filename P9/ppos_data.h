@@ -66,7 +66,7 @@ typedef struct task_t
   	int quanta_left; // total de quantum que falta para tarefa deixar a CPU
   	int task_nature; // indica se a tarefa eh do sistema ou do usuario 
     int exit_code; // indica o exit code passado para tarefa terminar em task_exit
-    int id_espera; // indica a id da tarefa que ela esta esperando terminar
+    int wait_id; // indica a id da tarefa que ela esta esperando terminar
 	int atomic; // se for setado como 1 a tarefa nao sofre interrupcao
     unsigned int wake_time;
 	unsigned int flag; // ZERO indica que nao ha tarefas esperando por ela, UM contrario
