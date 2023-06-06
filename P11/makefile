@@ -2,12 +2,12 @@
 # pelo aluno Claudinei Aparecido Alduan Filho GRR20203920
 
 TARGET = ppos-saida
-PROGRAM-TEST = test-program
+PROGRAM-TEST = pingpong-prodcons
 CC = gcc 
 CFLAGS = -Wall 
 CORE = ppos_core
-default: $(TARGET)
-all: default
+default: $(TARGET) clean
+all: default 
 
 debug: CFLAGS += -DDEBUG
 debug: default
@@ -25,4 +25,8 @@ $(PROGRAM-TEST).o: $(PROGRAM-TEST).c ppos.h
 	$(CC) $(CFLAGS) $(DEBUG) -c $(PROGRAM-TEST).c
 
 clean:
+	rm -f *.o 
+
+purge:
 	rm -f *.o $(TARGET)
+

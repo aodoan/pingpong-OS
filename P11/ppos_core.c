@@ -5,9 +5,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "ppos.h"
 #include "queue.h"
-#include <unistd.h>
+
 
 /* struct to save the current task */
 task_t *CurrentTask;
@@ -51,14 +52,16 @@ void print_elem(void* ptr){
         task_t *elem = ptr;
     printf("(%i)->[%i]->[%i]", elem->id, elem->static_prio, elem->dinamic_prio);
 }
-
-
 /* print the id, all tasks (USED ONLY IN DEBUG MODE) */
 void print_elem_id(void* ptr){
         task_t *elem = ptr;
     printf("(%i) ", elem->id);
 }
-void ppos_init(){
+void imprime_lista_prontos(){
+    queue_print("fila de prontos: ", (queue_t *) queueR, print_elem_id);
+}
+
+ void ppos_init(){
     #if defined DEBUG
     printf("ppos_init: iniciando as variaveis\n");
     #endif
@@ -122,7 +125,7 @@ int task_init (task_t *task, void  (*start_func)(void *), void   *arg) {
         task->birth_time = TIME;
         task->running_time = 0;
         task->activations = 0;
-        task->wake_time = 0;
+
         /* fields to manage the context of the task */
         task->context.uc_link = 0;
         task->context.uc_stack.ss_flags = 0;
@@ -336,7 +339,7 @@ void dispatcher(void* arg){
 
                 /* free the memory if the task was terminated */     
                 if(task->status == TERMINATED){
-                    free(task->context.uc_stack.ss_sp);
+                    //free(task->context.uc_stack.ss_sp);
 
                 }
         
@@ -396,7 +399,6 @@ void routine (int signum){
         if(CurrentTask->quanta_left <= 0){
             /* insert the task in ready queue */
             queue_append((queue_t**)&queueR, (queue_t *)CurrentTask);
-           
             /* set the status of the task to ready */
             CurrentTask->status = READY;
             
@@ -419,9 +421,8 @@ void task_suspended (task_t **queue){
     /* set the task status as SUSPENDED*/
     CurrentTask->status = SUSPENDED;
 
-    
     /* insert on the new queue */
-    queue_append((queue_t **)&queueS, (queue_t*) CurrentTask);
+    queue_append((queue_t **)queue, (queue_t*) CurrentTask);
     #ifdef DEBUG
     queue_print ("task_suspend: Fila de suspensos: ", (queue_t*) queueS, print_elem_id) ;
     #endif
@@ -432,17 +433,19 @@ void task_suspended (task_t **queue){
 void task_resume (task_t *task, task_t **queue){
     #ifdef DEBUG
     printf("task_resume: tirando a tarefa %i %i ", task->id, task->wake_time);
-    queue_print ("Fila de suspensos: ", (queue_t*) queueS, print_elem_id) ;
+    queue_print ("Fila de suspensos: ", (queue_t*) *queue, print_elem_id) ;
     #endif
-    /* remove from the suspended queue */
-    queue_remove((queue_t**) &queueS, (queue_t*) task);
-    /* insert on the ready queue */
-    queue_append((queue_t **) &queueR, (queue_t*) task);
-
-    /* set the status back to READY */
-    task->status = READY;
-    /* set the atomic flag as 1 */
-    task->atomic = 0;
+    /* check if the queue and the task exists*/
+    if(queue && task){
+        /* remove from the suspended queue */
+        queue_remove((queue_t**) queue, (queue_t*) task);
+        /* insert on the ready queue */
+        queue_append((queue_t **) &queueR, (queue_t*)task);
+        /* set the status back to READY */
+        task->status = READY;
+        /* set the atomic flag as 1 */
+        task->atomic = 0;
+    }
 }
 
 
@@ -495,4 +498,61 @@ void awake_tasks_time(){
         }while(aux != queueS && f == 0);
     }
 }
+
+int sem_init(semaphore_t *s, int value){
+    s->value = value;
+    /* start the queue with NULL */
+    s->queue = NULL;
+    return 0;
+}
+
+int sem_down(semaphore_t *s){
+    if(s == NULL) return -1;
+    /* prevents that the task is preempted */
+    CurrentTask->atomic = 1;
+
+    s->value--;
+    /* the task can proceed normaly */
+    if(s->value >= 0){
+        CurrentTask->atomic = 0;
+        return 0;
+    }
+    /* the task need to be suspended */
+    else{
+        CurrentTask->status = SUSPENDED;
+        /* insert on the queue */
+        
+        queue_append((queue_t**) &s->queue, (queue_t *) CurrentTask);
+        task_switch(Dispat);
+        return 0;
+    }
+
+}
+
+int sem_up(semaphore_t *s){
+    task_t *first_task = s->queue;
+    CurrentTask->atomic = 1;
+    s->value++;
+    /* opened a space in the semaphore, awakens the first task and send to the ready queue */
+    if(s->value <= 0){
+        task_resume(first_task, &s->queue);
+    }
+    CurrentTask->atomic = 0;
+    return 0;
+}
+
+int sem_destroy(semaphore_t *s){
+    task_t *queue = s->queue, *aux;
+    int elementos = s->value * (-1);
+    for(int i = 0; i < elementos; i++){
+        aux = queue;
+        queue = queue->next;
+        task_resume(aux, &s->queue);
+    }
+    return 0;
+}
+
+
+
+
 

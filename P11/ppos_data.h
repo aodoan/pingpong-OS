@@ -62,6 +62,7 @@ typedef struct task_t
   	int dinamic_prio; // prioridade dinamica
   	
   	
+	
   	/* time related fields */
   	int quanta_left; // total de quantum que falta para tarefa deixar a CPU
   	int task_nature; // indica se a tarefa eh do sistema ou do usuario 
@@ -80,6 +81,8 @@ typedef struct task_t
 // estrutura que define um semáforo
 typedef struct
 {
+	int value; // campo que indica a quantidade de vagas do semaforo
+	task_t* queue; // fila de tarefas 
   // preencher quando necessário
 } semaphore_t ;
 
