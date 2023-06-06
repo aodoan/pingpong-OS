@@ -6,8 +6,8 @@ PROGRAM-TEST = test-program
 CC = gcc 
 CFLAGS = -Wall 
 CORE = ppos_core
-default: $(TARGET) clean
-all: default 
+default: $(TARGET)
+all: default
 
 debug: CFLAGS += -DDEBUG
 debug: default
@@ -25,8 +25,4 @@ $(PROGRAM-TEST).o: $(PROGRAM-TEST).c ppos.h
 	$(CC) $(CFLAGS) $(DEBUG) -c $(PROGRAM-TEST).c
 
 clean:
-	rm -f *.o 
-
-purge:
 	rm -f *.o $(TARGET)
-

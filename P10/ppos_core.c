@@ -5,9 +5,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "ppos.h"
 #include "queue.h"
-#include <unistd.h>
+
 
 /* struct to save the current task */
 task_t *CurrentTask;
@@ -398,7 +399,6 @@ void routine (int signum){
         if(CurrentTask->quanta_left <= 0){
             /* insert the task in ready queue */
             queue_append((queue_t**)&queueR, (queue_t *)CurrentTask);
-           
             /* set the status of the task to ready */
             CurrentTask->status = READY;
             
@@ -433,18 +433,19 @@ void task_suspended (task_t **queue){
 void task_resume (task_t *task, task_t **queue){
     #ifdef DEBUG
     printf("task_resume: tirando a tarefa %i %i ", task->id, task->wake_time);
-    queue_print ("Fila de suspensos: ", (queue_t*) queueS, print_elem_id) ;
+    queue_print ("Fila de suspensos: ", (queue_t*) *queue, print_elem_id) ;
     #endif
-    int a = 0, b = 0;
-    /* remove from the suspended queue */
-    a = queue_remove((queue_t**) queue, (queue_t*) task);
-   
-    /* insert on the ready queue */
-    b = queue_append((queue_t **) &queueR, (queue_t*) task);
-    /* set the status back to READY */
-    task->status = READY;
-    /* set the atomic flag as 1 */
-    task->atomic = 0;
+    /* check if the queue and the task exists*/
+    if(queue && task){
+        /* remove from the suspended queue */
+        queue_remove((queue_t**) queue, (queue_t*) task);
+        /* insert on the ready queue */
+        queue_append((queue_t **) &queueR, (queue_t*)task);
+        /* set the status back to READY */
+        task->status = READY;
+        /* set the atomic flag as 1 */
+        task->atomic = 0;
+    }
 }
 
 
@@ -506,6 +507,7 @@ int sem_init(semaphore_t *s, int value){
 }
 
 int sem_down(semaphore_t *s){
+    if(s == NULL) return -1;
     /* prevents that the task is preempted */
     CurrentTask->atomic = 1;
 
@@ -519,6 +521,7 @@ int sem_down(semaphore_t *s){
     else{
         CurrentTask->status = SUSPENDED;
         /* insert on the queue */
+        
         queue_append((queue_t**) &s->queue, (queue_t *) CurrentTask);
         task_switch(Dispat);
         return 0;
@@ -532,13 +535,24 @@ int sem_up(semaphore_t *s){
     s->value++;
     /* opened a space in the semaphore, awakens the first task and send to the ready queue */
     if(s->value <= 0){
-        task_resume(first_task, (task_t **) &s->queue);
+        task_resume(first_task, &s->queue);
     }
     CurrentTask->atomic = 0;
     return 0;
 }
 
 int sem_destroy(semaphore_t *s){
-    
+    task_t *queue = s->queue, *aux;
+    int elementos = s->value * (-1);
+    for(int i = 0; i < elementos; i++){
+        aux = queue;
+        queue = queue->next;
+        task_resume(aux, &s->queue);
+    }
     return 0;
 }
+
+
+
+
+
