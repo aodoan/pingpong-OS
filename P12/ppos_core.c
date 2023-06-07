@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include "ppos.h"
 #include "queue.h"
 
@@ -552,7 +553,48 @@ int sem_destroy(semaphore_t *s){
     return 0;
 }
 
+int mqueue_init(mqueue_t *queue, int max_msgs, int msg_size){
+    queue->max_msgs = max_msgs;
+    queue->msg_size = msg_size;
+    //calcula o tamanho do buffer
+    queue->buffer = malloc(sizeof(max_msgs/msg_size));
+    queue->atual = 0;
+    return 0;
+}
+
+int mqueue_send(mqueue_t *queue, void *msg){
+    //se tiver espaco vazio, manda e vaza
+    if(queue->atual < queue->max_msgs){
+        queue->atual++;
+        memcpy(&queue->buffer[queue->atual], msg, 1);
+        return 0;
+    }
+    //se tiver cheio, suspende a tarefa
+    else{
+        task_suspended(&queue->fila_suspensos);
+        queue->atual++;
+        memcpy(queue->buffer[queue->atual], msg, 1);
+        return 0;
+    }
+
+    return 0;
+}
 
 
+int mqueue_recv(mqueue_t *queue, void *msg){
+    //se tiver o que receber
+    if(queue->atual > 0){
+        memcpy(msg, queue->buffer, 1);
+        return 0;
+    }
 
+    return 0;
+}
 
+int mqueue_msgs (mqueue_t *queue){
+    return queue->atual;
+}
+
+int mqueue_destroy(mqueue_t* queue){
+    return 0;   
+}
