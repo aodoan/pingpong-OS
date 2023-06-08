@@ -1,2 +1,2 @@
 # Sistemas-Operacionais
-Criado para armazenar os trabalhos da disciplina de Sistemas Operacionais do professor Carlos Maziero.
+Esse repositorio NAO oferece o codigo fonte, todos os arquivos .c foram omitidos.
