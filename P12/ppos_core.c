@@ -183,7 +183,7 @@ int task_init (task_t *task, void  (*start_func)(void *), void   *arg) {
 }
 
 int task_switch (task_t *task){
-    /* increasce the number of times that the task won the CPU */
+    /* increase the number of times that the task won the CPU */
     CurrentTask->activations++;
 
     task_t *temp = CurrentTask;
@@ -504,11 +504,14 @@ int sem_init(semaphore_t *s, int value){
     s->value = value;
     /* start the queue with NULL */
     s->queue = NULL;
+    s->destruido = 0;
     return 0;
 }
 
 int sem_down(semaphore_t *s){
-    if(s == NULL) return -1;
+    if(s->destruido == 1){
+        return -1;
+    } 
     /* prevents that the task is preempted */
     CurrentTask->atomic = 1;
 
@@ -531,6 +534,9 @@ int sem_down(semaphore_t *s){
 }
 
 int sem_up(semaphore_t *s){
+    if(s->destruido == 1){
+        return -1;
+    } 
     task_t *first_task = s->queue;
     CurrentTask->atomic = 1;
     s->value++;
@@ -544,49 +550,71 @@ int sem_up(semaphore_t *s){
 
 int sem_destroy(semaphore_t *s){
     task_t *queue = s->queue, *aux;
+    s->destruido = 1;
     int elementos = s->value * (-1);
     for(int i = 0; i < elementos; i++){
         aux = queue;
         queue = queue->next;
         task_resume(aux, &s->queue);
     }
+    s = NULL;
     return 0;
 }
 
 int mqueue_init(mqueue_t *queue, int max_msgs, int msg_size){
     queue->max_msgs = max_msgs;
     queue->msg_size = msg_size;
-    //calcula o tamanho do buffer
-    queue->buffer = malloc(sizeof(max_msgs/msg_size));
+    
+    queue->buffer = malloc(max_msgs * msg_size);
     queue->atual = 0;
+
+    /* initialize semaphores */
+    sem_init(&queue->vagas, max_msgs);
+    sem_init(&queue->buf, 1);
+    sem_init(&queue->items, 0);
+
     return 0;
 }
 
 int mqueue_send(mqueue_t *queue, void *msg){
-    //se tiver espaco vazio, manda e vaza
-    if(queue->atual < queue->max_msgs){
-        queue->atual++;
-        memcpy(&queue->buffer[queue->atual], msg, 1);
-        return 0;
-    }
-    //se tiver cheio, suspende a tarefa
-    else{
-        task_suspended(&queue->fila_suspensos);
-        queue->atual++;
-        memcpy(queue->buffer[queue->atual], msg, 1);
-        return 0;
-    }
-
+    /* if there is no space in buffer, wait in queue */
+    if(sem_down(&queue->vagas) == -1)   return -1;
+    
+    /* if there is another task using the buffer, wait in queue*/
+    if(sem_down(&queue->buf) == -1)     return -1;
+    
+    /* insert the message at the end of queue with memcpy */
+    memcpy(queue->buffer + (queue->atual * queue->msg_size), msg, queue->msg_size);
+    /* increment the number of messages in the buffer */
+    queue->atual++;
+    /* free the mutex */
+    if(sem_up(&queue->buf) == -1)       return -1;
+    
+    //if(sem_up(&queue->vagas) == -1)     return -1;
+    /* there is one more item in the buffer to be consumed */
+    if(sem_up(&queue->items) == -1)     return -1;
     return 0;
 }
 
 
 int mqueue_recv(mqueue_t *queue, void *msg){
-    //se tiver o que receber
-    if(queue->atual > 0){
-        memcpy(msg, queue->buffer, 1);
-        return 0;
+    /* if there is no item to be consumed, wait in queue*/
+    if(sem_down(&queue->items) == -1)   return -1;
+
+    /* wait in queue if there is anoter task using the buffer */
+    if(sem_down(&queue->buf) == -1)     return -1;
+    /* use memcpy to copy the data in the first position in buffer to the pointer */
+    memcpy(msg, queue->buffer, queue->msg_size);
+    
+    if(sem_up(&queue->buf) == -1)       return -1;
+    
+    /* iterate the whole buffer changing the position of every item */
+    for(int i = 1; i < queue->atual; i++){
+        memcpy(queue->buffer + (i-1) * queue->msg_size, 
+        queue->buffer + i * queue->msg_size, queue->msg_size);
     }
+    queue->atual--;
+    if(sem_up(&queue->vagas) == -1 )    return -1;
 
     return 0;
 }
@@ -596,5 +624,14 @@ int mqueue_msgs (mqueue_t *queue){
 }
 
 int mqueue_destroy(mqueue_t* queue){
+    /* destroy the semaphores */
+    sem_destroy(&queue->vagas);
+    sem_destroy(&queue->items);
+    sem_destroy(&queue->buf);
+
+    /* free the buffer */
+    free(queue->buffer);
+    queue->buffer = NULL;
+
     return 0;   
 }

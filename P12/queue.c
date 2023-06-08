@@ -2,10 +2,8 @@
 * Código desenvolvido para disciplina de Sistemas Operacionais 
 * pelo aluno Claudinei Aparecido Alduan Filho GRR20203920
 */
-
-#include "queue.h"
 #include <stdio.h>
-
+#include "queue.h"
 int queue_size(queue_t *queue){
     //start the counter
     int counter = 0;

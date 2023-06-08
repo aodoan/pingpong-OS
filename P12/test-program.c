@@ -97,7 +97,6 @@ int main (int argc, char *argv[])
    // cria as filas de mensagens (5 valores cada)
    mqueue_init (&queueValores, 5, sizeof(int)) ;
    mqueue_init (&queueRaizes,  5, sizeof(double)) ;
-
    // cria as threads
    task_init (&somador, somaBody, NULL) ;
    task_init (&cons[0], consBody, NULL) ;

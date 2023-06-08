@@ -17,23 +17,23 @@
 #include <sys/time.h>
 
 /* default value for stacksize */
-#define STACKSIZE 64*1024
+#define STACKSIZE 	64*1024
 
 /* upper and lower bound of priorities */
-#define UPPER_PRIO 20
+#define UPPER_PRIO 	20
 #define LOWER_PRIO -20
 
 /* default id of main */
-#define ID_MAIN 0
+#define ID_MAIN 	0
 
 /* define the initial value of id */
-#define INITIAL_ID 0
+#define INITIAL_ID 	0
 
 /* status of the task */
-#define READY 'R'
-#define TERMINATED 'T'
-#define SUSPENDED 'S'
-#define RUNNING 'L'
+#define READY 		'R'
+#define TERMINATED 	'T'
+#define SUSPENDED 	'S'
+#define RUNNING 	'L'
 
 /* nature of task */
 #define USER 10
@@ -50,40 +50,40 @@
 typedef struct task_t
 {
 	/* campos fornecidos pelo professor */ 
- 	struct task_t *prev, *next ;		// ponteiros para usar em filas
-  	int id ;				// identificador da tarefa
-  	ucontext_t context ;			// contexto armazenado da tarefa
-  	short status ;			// pronta, rodando, suspensa, ...
+ 	struct task_t  *prev, *next;	// ponteiros para usar em filas
+  	int 			id;				// identificador da tarefa
+  	ucontext_t 		context;		// contexto armazenado da tarefa
+  	short 			status;			// pronta, rodando, suspensa, ...
 /* ------------------------------------------------------------------------------------------------ */
 
 	/* campos adicionados */
 	/* priority related fields */
-  	int static_prio; // prioridade estatica
-  	int dinamic_prio; // prioridade dinamica
+  	int static_prio; 				// prioridade estatica
+  	int dinamic_prio; 				// prioridade dinamica
   	
   	
 	
-  	/* time related fields */
-  	int quanta_left; // total de quantum que falta para tarefa deixar a CPU
-  	int task_nature; // indica se a tarefa eh do sistema ou do usuario 
-    int exit_code; // indica o exit code passado para tarefa terminar em task_exit
-    int wait_id; // indica a id da tarefa que ela esta esperando terminar
-	int atomic; // se for setado como 1 a tarefa nao sofre interrupcao
+  							/* time related fields */
+  			 int quanta_left; 		// total de quantum que falta para tarefa deixar a CPU
+  			 int task_nature; 		// indica se a tarefa eh do sistema ou do usuario 
+    		 int exit_code; 		// indica o exit code passado para tarefa terminar em task_exit
+    		 int wait_id; 			// indica a id da tarefa que ela esta esperando terminar
+			 int atomic; 			// se for setado como 1 a tarefa nao sofre interrupcao
     unsigned int wake_time;
-	unsigned int flag; // ZERO indica que nao ha tarefas esperando por ela, UM contrario
-    unsigned int birth_time; // indica o momento em que a tarefa foi criada
-  	unsigned int death_time; // indica o momento em que a tarefa foi encerrada
-  	unsigned int running_time; // indica o tempo que a tarefa gastou sendo processada
-  	unsigned int activations; // indica o numero de vezes que a tarefa ganhou o processador
+	unsigned int flag; 				// ZERO indica que nao ha tarefas esperando por ela, UM contrario
+    unsigned int birth_time; 		// indica o momento em que a tarefa foi criada
+  	unsigned int death_time; 		// indica o momento em que a tarefa foi encerrada
+  	unsigned int running_time; 		// indica o tempo que a tarefa gastou sendo processada
+  	unsigned int activations; 		// indica o numero de vezes que a tarefa ganhou o processador
   	// ... (outros campos serão adicionados mais tarde)
 } task_t ;
 
 // estrutura que define um semáforo
 typedef struct
 {
-	int value; // campo que indica a quantidade de vagas do semaforo
-	task_t* queue; // fila de tarefas 
-  // preencher quando necessário
+	int value; 		// campo que indica a quantidade de vagas do semaforo
+	task_t* queue; 	// fila de tarefas 
+	int destruido; 	//setado para 1 quando o semaforo for destruido
 } semaphore_t ;
 
 // estrutura que define um mutex
@@ -101,12 +101,15 @@ typedef struct
 // estrutura que define uma fila de mensagens
 typedef struct
 {
-	int max_msgs; //tamanho da fila
-	int msg_size;
-	int atual; //indica quantas mensagens estao na fila
-	void *buffer;
-	task_t *fila_suspensos;
-  // preencher quando necessário
+	int max_msgs; 		// tamanho da fila
+	int msg_size;		// tamanho (em bytes) de cada mensagem da fila
+	int atual; 			// indica quantas mensagems atualmente estao na fila
+	void *buffer; 		// ponteiro para armazenar 
+
+	semaphore_t vagas;  // semaforo que controla as vagas
+	semaphore_t items;  // semaforo que controla os items (msg_atual)
+	semaphore_t buf; 	// semaforo (mutex) que controla o acesso ao buffer
+
 } mqueue_t ;
 
 #endif
