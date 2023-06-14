@@ -83,7 +83,7 @@ typedef struct
 {
 	int value; 		// campo que indica a quantidade de vagas do semaforo
 	task_t* queue; 	// fila de tarefas 
-	int destruido; 	//setado para 1 quando o semaforo for destruido
+	int destroyed; 	//setado para 1 quando o semaforo for destruido
 } semaphore_t ;
 
 // estrutura que define um mutex

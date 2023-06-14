@@ -1,7 +1,7 @@
 /*
-* Código desenvolvido para disciplina de Sistemas Operacionais 
-* pelo aluno Claudinei Aparecido Alduan Filho GRR20203920
-*/
+ * Código desenvolvido para disciplina de Sistemas Operacionais
+ * pelo aluno Claudinei Aparecido Alduan Filho GRR20203920
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,7 +9,6 @@
 #include <string.h>
 #include "ppos.h"
 #include "queue.h"
-
 
 /* struct to save the current task */
 task_t *CurrentTask;
@@ -23,17 +22,17 @@ task_t *Dispat = &dispat;
 ucontext_t ContextMain;
 
 /* time related structs UNIX SIGNAL */
-struct sigaction action ;
+struct sigaction action;
 struct itimerval timer;
 
 /* timer global variable */
 unsigned int TIME;
 
 /* declaration of dispatcher */
-void dispatcher(void* arg);
+void dispatcher(void *arg);
 
 /* declatarion of functions */
-void routine (int signum);
+void routine(int signum);
 void awake_tasks_time();
 
 /* variable to store the next id */
@@ -43,26 +42,30 @@ long int id;
 long int userTasks;
 
 /* queue of ready tasks */
-task_t* queueR = NULL;
+task_t *queueR = NULL;
 
 /* queue of suspended tasks */
-task_t* queueS = NULL;
+task_t *queueS = NULL;
 
 /* print the id, static and dinamic prioirity of a task (USED ONLY IN DEBUG MODE) */
-void print_elem(void* ptr){
-        task_t *elem = ptr;
+void print_elem(void *ptr)
+{
+    task_t *elem = ptr;
     printf("(%i)->[%i]->[%i]", elem->id, elem->static_prio, elem->dinamic_prio);
 }
 /* print the id, all tasks (USED ONLY IN DEBUG MODE) */
-void print_elem_id(void* ptr){
-        task_t *elem = ptr;
+void print_elem_id(void *ptr)
+{
+    task_t *elem = ptr;
     printf("(%i) ", elem->id);
 }
-void imprime_lista_prontos(){
-    queue_print("fila de prontos: ", (queue_t *) queueR, print_elem_id);
+void imprime_lista_prontos()
+{
+    queue_print("fila de prontos: ", (queue_t *)queueR, print_elem_id);
 }
 
- void ppos_init(){
+void ppos_init()
+{
     #if defined DEBUG
     printf("ppos_init: iniciando as variaveis\n");
     #endif
@@ -72,22 +75,23 @@ void imprime_lista_prontos(){
     action.sa_handler = routine;
     action.sa_flags = 0;
 
-    if (sigaction (SIGALRM, &action, 0) < 0){
-        perror ("Erro em sigaction: ") ;
-        exit (1) ;
+    if (sigaction(SIGALRM, &action, 0) < 0)
+    {
+        perror("Erro em sigaction: ");
+        exit(1);
     }
 
     // ajusta valores do temporizador
-    timer.it_value.tv_usec = QUANTA;      // primeiro disparo, em micro-segundos
-    timer.it_value.tv_sec = 0;      // primeiro disparo, em segundos
-    timer.it_interval.tv_usec = QUANTA;   // disparos subsequentes, em micro-segundos
-    timer.it_interval.tv_sec = 0;   // disparos subsequentes, em segundos
+    timer.it_value.tv_usec = QUANTA;    // primeiro disparo, em micro-segundos
+    timer.it_value.tv_sec = 0;          // primeiro disparo, em segundos
+    timer.it_interval.tv_usec = QUANTA; // disparos subsequentes, em micro-segundos
+    timer.it_interval.tv_sec = 0;       // disparos subsequentes, em segundos
 
     // arma o temporizador ITIMER_REAL
-    if (setitimer (ITIMER_REAL, &timer, 0) < 0)
+    if (setitimer(ITIMER_REAL, &timer, 0) < 0)
     {
-        perror ("Erro em setitimer: ") ;
-        exit (1) ;
+        perror("Erro em setitimer: ");
+        exit(1);
     }
 
     /* define the id as the initial value (to be used in the next task) */
@@ -100,7 +104,7 @@ void imprime_lista_prontos(){
 
     /* create the dispatcher task and remove it from the ready queue */
     task_init(Dispat, dispatcher, NULL);
-    queue_remove((queue_t **)&queueR, (queue_t*)Dispat);
+    queue_remove((queue_t **)&queueR, (queue_t *)Dispat);
     userTasks--;
 
     /* desativa o buffer da saida padrao (stdout), usado pela função printf */
@@ -110,15 +114,17 @@ void imprime_lista_prontos(){
     task_switch(Dispat);
 }
 
-int task_init (task_t *task, void  (*start_func)(void *), void   *arg) {
-    if(task == NULL)
+int task_init(task_t *task, void (*start_func)(void *), void *arg)
+{
+    if (task == NULL)
         return 0;
-    
+
     /* create the context */
     getcontext(&task->context);
     char *stack;
     stack = malloc(STACKSIZE);
-    if(stack){
+    if (stack)
+    {
         task->atomic = 0;
         task->flag = 0;
         task->wait_id = -1;
@@ -134,12 +140,11 @@ int task_init (task_t *task, void  (*start_func)(void *), void   *arg) {
         task->context.uc_stack.ss_size = STACKSIZE;
 
         /* create the context of the task */
-        if(start_func != NULL)
-            makecontext(&task->context, (void*)(* start_func), 1, arg);          
+        if (start_func != NULL)
+            makecontext(&task->context, (void *)(*start_func), 1, arg);
         else
             task->context = ContextMain;
-        
-        
+
         /* fields to manage the TCB queue */
         task->next = NULL;
         task->prev = NULL;
@@ -150,12 +155,12 @@ int task_init (task_t *task, void  (*start_func)(void *), void   *arg) {
         /* set the id of the task and increment to use in the next task */
         task->id = id;
         id++;
-        
+
         task->static_prio = 0;
         task->dinamic_prio = 0;
 
         /* if the task is not the dispatcher */
-        if(task == Dispat)
+        if (task == Dispat)
             task->task_nature = SYSTEM;
         else
             task->task_nature = USER;
@@ -163,18 +168,16 @@ int task_init (task_t *task, void  (*start_func)(void *), void   *arg) {
         /* set the initial amount of quanta */
         task->quanta_left = INITAL_QUANTUM;
 
-        #ifdef DEBUG
+    #ifdef DEBUG
         printf("task_init: iniciada a tarefa %i\n", task->id);
-        #endif
-        
+    #endif
 
         /* increment the number of user tasks and the id for the next task */
         userTasks++;
-        
 
         /* insert on the ready queue */
-        queue_append((queue_t **)&queueR, (queue_t*) task);
-        
+        queue_append((queue_t **)&queueR, (queue_t *)task);
+
         /* return the id of current task */
         return task->id;
     }
@@ -182,7 +185,8 @@ int task_init (task_t *task, void  (*start_func)(void *), void   *arg) {
     return 0;
 }
 
-int task_switch (task_t *task){
+int task_switch(task_t *task)
+{
     /* increase the number of times that the task won the CPU */
     CurrentTask->activations++;
 
@@ -195,99 +199,107 @@ int task_switch (task_t *task){
     swapcontext(&temp->context, &task->context);
     return 0;
 }
-     
-void awake_tasks_id (int id){
+
+void awake_tasks_id(int id)
+{
     task_t *aux = queueS, *aux2;
     /* indicates if the suspended queue is empty */
     int f = 0;
-    do{        
-        if(aux->wait_id == id){
+    do
+    {
+        if (aux->wait_id == id)
+        {
             aux2 = aux;
 
             /* if the queue has one element */
-            if(aux == aux->next){
+            if (aux == aux->next)
+            {
                 f = 1;
             }
             aux->wait_id = 0;
             aux = aux->next;
-            
+
             #ifdef DEBUG
             printf("acordando a tarefa %i\n", aux->id);
             #endif
-            task_resume(aux2, (task_t **) &queueS);
-            
+            task_resume(aux2, (task_t **)&queueS);
         }
         else
             /* else, iterates the queue */
             aux = aux->next;
 
-    }while(aux != queueS && f == 0);
-    
+    } while (aux != queueS && f == 0);
 }
-void task_exit (int exit_code) {
+void task_exit(int exit_code)
+{
     /* check if there are tasks waiting for current task to end */
-    if(CurrentTask->flag == 1){
+    if (CurrentTask->flag == 1)
+    {
         awake_tasks_id(CurrentTask->id);
     }
     /* decrease the number of user tasks*/
     userTasks--;
-    
+
     /* store the exit code in the TCB */
     CurrentTask->exit_code = exit_code;
-    
+
     /* set the death_time */
     CurrentTask->death_time = TIME;
-    
+
     /* prints the exit message */
-    printf("Task %d exit: execution time %d ms, processor time %d ms, %d activations\n"
-    , CurrentTask->id, CurrentTask->death_time-CurrentTask->birth_time, CurrentTask->running_time,CurrentTask->activations);
-    
-    task_t* temp = CurrentTask;
-    
+    printf("Task %d exit: execution time %d ms, processor time %d ms, %d activations\n", CurrentTask->id, CurrentTask->death_time - CurrentTask->birth_time, CurrentTask->running_time, CurrentTask->activations);
+
+    task_t *temp = CurrentTask;
+
     /* set the status as TERMINATED */
     temp->status = TERMINATED;
-    
+
     #ifdef DEBUG
     printf("task_exit: tarefa %i sendo encerrada, com exit_code %i \n", temp->id, exit_code);
     #endif
 
     /* if the dispatcher called task_exit, that means that there are no more tasks in the system. exit*/
-    if(CurrentTask == Dispat)
+    if (CurrentTask == Dispat)
         exit(0);
-    
+
     /* else, goes to dispatcher */
     else
-        task_switch(Dispat);    
+        task_switch(Dispat);
 }
 
 /* return the id of the current task*/
-int task_id(){
+int task_id()
+{
     return CurrentTask->id;
 }
 
-task_t* scheduler(){
+task_t *scheduler()
+{
     /* pointer to iterate the whole queue */
-    task_t* aux = queueR;
-    task_t* nextTask = NULL;
+    task_t *aux = queueR;
+    task_t *nextTask = NULL;
     /* variable that store the max priority (to compare) */
     int min = UPPER_PRIO + 1;
-    do{
+    do
+    {
         /* the dinamic priority is lower than the min */
-        if(aux->dinamic_prio < min){
+        if (aux->dinamic_prio < min)
+        {
             min = aux->dinamic_prio;
             nextTask = aux;
         }
         /* if the dinamic priority is the same, compare the static priority */
-        else if(aux->dinamic_prio == min && aux->static_prio < nextTask->static_prio){
+        else if (aux->dinamic_prio == min && aux->static_prio < nextTask->static_prio)
+        {
             min = aux->dinamic_prio;
             nextTask = aux;
         }
         aux = aux->next;
-    }while (aux != queueR);
+    } while (aux != queueR);
     /* found the task with higher priority (lower number) */
-    
+
     #ifdef DEBUG
-    queue_print ("scheduler: Fila de prontos", (queue_t*) queueR, print_elem) ;
+    queue_print("scheduler: Fila de prontos", (queue_t *)queueR, print_elem);
     printf("scheduler: A tarefa escolhida foi: ");
     print_elem(nextTask);
     printf("\n");
@@ -297,66 +309,72 @@ task_t* scheduler(){
     nextTask->dinamic_prio = nextTask->static_prio;
 
     /* remove it from the ready queue */
-    queue_remove((queue_t**) &queueR, (queue_t*)nextTask);
-    
+    queue_remove((queue_t **)&queueR, (queue_t *)nextTask);
+
     /* lower the dinamic priority of all other tasks */
     /* check if there are more tasks */
-    if(queueR){
-        aux = queueR;    
-        do{
+    if (queueR)
+    {
+        aux = queueR;
+        do
+        {
             /* decrease the dinamic priority of all tasks */
             aux->dinamic_prio--;
 
             /* prevents that the priority is lower than -20 */
-            if(aux->dinamic_prio < LOWER_PRIO)
+            if (aux->dinamic_prio < LOWER_PRIO)
                 aux->dinamic_prio = LOWER_PRIO;
 
             aux = aux->next;
-        }while (aux != queueR);
+        } while (aux != queueR);
     }
     return nextTask;
-} 
+}
 
-void dispatcher(void* arg){
+void dispatcher(void *arg)
+{
     /* while has tasks to execute */
-    while(userTasks > 0){
+    while (userTasks > 0)
+    {
         /* awake all the tasks on the suspended queue */
         awake_tasks_time();
-        
+
         /* verifies if there any task on the ready queue */
-        if(queueR != NULL){
+        if (queueR != NULL)
+        {
             /* get the task with higher priority */
             task_t *task = scheduler();
-    
-            if(task != NULL){
-                /* set the status as RUNNING */                
+
+            if (task != NULL)
+            {
+                /* set the status as RUNNING */
                 task->status = RUNNING;
-                
+
                 /* set the quanta */
                 task->quanta_left = INITAL_QUANTUM;
-                
+
                 /* switch to the task */
                 task_switch(task);
 
-                /* free the memory if the task was terminated */     
-                if(task->status == TERMINATED){
-                    //free(task->context.uc_stack.ss_sp);
-
+                /* free the memory if the task was terminated */
+                if (task->status == TERMINATED)
+                {
+                    free(task->context.uc_stack.ss_sp);
                 }
-        
-            }     
+            }
         }
         else
             /* if there are not task in the ready queue, sleep */
             sleep(100);
     }
-    
+
     task_exit(0);
 }
 
-void task_yield(){
+void task_yield()
+{
     /* insert the task in the ready queue */
-    queue_append((queue_t**)&queueR, (queue_t *)CurrentTask);
+    queue_append((queue_t **)&queueR, (queue_t *)CurrentTask);
     CurrentTask->status = READY;
 
     #ifdef DEBUG
@@ -364,84 +382,95 @@ void task_yield(){
     #endif
     /* goes to the dispatcher */
     task_switch(Dispat);
-    
 }
 
-void task_setprio (task_t *task, int prio){
+void task_setprio(task_t *task, int prio)
+{
     /* verifies if prio is in the range */
-    if(prio <= 20 && prio >= -20){
+    if (prio <= 20 && prio >= -20)
+    {
         task->static_prio = prio;
         task->dinamic_prio = prio;
     }
     /* if not, set to zero*/
-    else{
+    else
+    {
         task->static_prio = 0;
         task->dinamic_prio = 0;
     }
 }
 
 /* return the static priority of task*/
-int task_getprio (task_t *task){
-    if(task)
+int task_getprio(task_t *task)
+{
+    if (task)
         return task->static_prio;
     /* if task is NULL, return the priority of the current task */
     return CurrentTask->static_prio;
 }
 
 /* its called in every tick of the clock */
-void routine (int signum){
+void routine(int signum)
+{
     /* increment the global variable TIME and cpu time of the task */
     TIME++;
     CurrentTask->running_time++;
     /* if is a system task, ignores it */
-    if(CurrentTask->task_nature != SYSTEM && CurrentTask->atomic == 0 ){
+    if (CurrentTask->task_nature != SYSTEM && CurrentTask->atomic == 0)
+    {
         CurrentTask->quanta_left--;
         /* the task spent all the quantas */
-        if(CurrentTask->quanta_left <= 0){
+        if (CurrentTask->quanta_left <= 0)
+        {
             /* insert the task in ready queue */
-            queue_append((queue_t**)&queueR, (queue_t *)CurrentTask);
+            queue_append((queue_t **)&queueR, (queue_t *)CurrentTask);
             /* set the status of the task to ready */
             CurrentTask->status = READY;
-            
+
             /* switch to the dispatcher */
             task_switch(Dispat);
         }
     }
 }
 
-unsigned int systime (){
+unsigned int systime()
+{
     return TIME;
 }
 
-void task_suspended (task_t **queue){
+void task_suspended(task_t **queue)
+{
     /* if the task is in the ready queue, remove it */
-    if(CurrentTask->status == READY){     
-        queue_remove((queue_t **)&queueR, (queue_t*) CurrentTask);
+    if (CurrentTask->status == READY)
+    {
+        queue_remove((queue_t **)&queueR, (queue_t *)CurrentTask);
     }
-    
+
+    #ifdef DEBUG
+    queue_print("task_suspend: Fila de suspensos: ", (queue_t *)queueS, print_elem_id);
+    #endif
     /* set the task status as SUSPENDED*/
     CurrentTask->status = SUSPENDED;
 
     /* insert on the new queue */
-    queue_append((queue_t **)queue, (queue_t*) CurrentTask);
-    #ifdef DEBUG
-    queue_print ("task_suspend: Fila de suspensos: ", (queue_t*) queueS, print_elem_id) ;
-    #endif
+    queue_append((queue_t **)queue, (queue_t *)CurrentTask);
     /* returns to dispatcher*/
     task_switch(Dispat);
 }
 
-void task_resume (task_t *task, task_t **queue){
+void task_resume(task_t *task, task_t **queue)
+{
     #ifdef DEBUG
     printf("task_resume: tirando a tarefa %i %i ", task->id, task->wake_time);
-    queue_print ("Fila de suspensos: ", (queue_t*) *queue, print_elem_id) ;
+    queue_print("Fila de suspensos: ", (queue_t *)*queue, print_elem_id);
     #endif
     /* check if the queue and the task exists*/
-    if(queue && task){
+    if (queue && task)
+    {
         /* remove from the suspended queue */
-        queue_remove((queue_t**) queue, (queue_t*) task);
+        queue_remove((queue_t **)queue, (queue_t *)task);
         /* insert on the ready queue */
-        queue_append((queue_t **) &queueR, (queue_t*)task);
+        queue_append((queue_t **)&queueR, (queue_t *)task);
         /* set the status back to READY */
         task->status = READY;
         /* set the atomic flag as 1 */
@@ -449,13 +478,18 @@ void task_resume (task_t *task, task_t **queue){
     }
 }
 
-
-int task_wait(task_t *task){
+int task_wait(task_t *task)
+{
     /* check if the task exists */
-    if(task == NULL)
+    if (task == NULL)
         return -1;
+    
+    #ifdef DEBUG
+    printf("task_wait: tarefa %i esperando por tarefa %i\n", CurrentTask->id, task->id);
+    #endif
 
-    if(CurrentTask->status != SUSPENDED && task->status != TERMINATED){
+    if (CurrentTask->status != SUSPENDED && task->status != TERMINATED)
+    {
         CurrentTask->atomic = 1;
         /* saves the id to be awake after */
         CurrentTask->wait_id = task->id;
@@ -464,30 +498,39 @@ int task_wait(task_t *task){
         task_suspended(&queueS);
         CurrentTask->atomic = 0;
         /* the task has already stopped */
-        return task->exit_code; 
+        return task->exit_code;
     }
     /* default error return value */
     return -1;
 }
 
-void task_sleep(int t){
+void task_sleep(int t)
+{
+#ifdef DEBUG
+    printf("task_sleep: tarefa %i dormindo por %i ms\n", CurrentTask->id, t);
+#endif
     /* prevents that the task is preempted before goes to suspended */
     CurrentTask->atomic = 1;
 
     CurrentTask->wake_time = TIME + t;
-    task_suspended(&queueS); 
+    task_suspended(&queueS);
 }
 
-void awake_tasks_time(){
+void awake_tasks_time()
+{
     task_t *aux = queueS, *aux2;
     /* flag that shows that the queue is empty */
     int f = 0;
-    if(queueS){
-        do{
+    if (queueS)
+    {
+        do
+        {
             /* just awake the task if was suspended with task_wait */
-            if(aux->wake_time <= TIME && aux->wait_id < 0){
+            if (aux->wake_time <= TIME && aux->wait_id < 0)
+            {
                 aux2 = aux;
-                if(aux == aux->next){
+                if (aux == aux->next)
+                {
                     f = 1;
                 }
                 aux = aux->next;
@@ -496,63 +539,75 @@ void awake_tasks_time(){
             }
             else
                 aux = aux->next;
-        }while(aux != queueS && f == 0);
+        } while (aux != queueS && f == 0);
     }
 }
 
-int sem_init(semaphore_t *s, int value){
+int sem_init(semaphore_t *s, int value)
+{
+#ifdef DEBUG
+    printf("sem_init: iniciando o semaforo com valor de %i\n", value);
+#endif
     s->value = value;
     /* start the queue with NULL */
     s->queue = NULL;
-    s->destruido = 0;
+    s->destroyed = 0;
     return 0;
 }
 
-int sem_down(semaphore_t *s){
-    if(s->destruido == 1){
+int sem_down(semaphore_t *s)
+{
+    if (s->destroyed == 1)
+    {
         return -1;
-    } 
+    }
     /* prevents that the task is preempted */
     CurrentTask->atomic = 1;
 
     s->value--;
     /* the task can proceed normaly */
-    if(s->value >= 0){
+    if (s->value >= 0)
+    {
         CurrentTask->atomic = 0;
         return 0;
     }
     /* the task need to be suspended */
-    else{
+    else
+    {
         CurrentTask->status = SUSPENDED;
         /* insert on the queue */
-        
-        queue_append((queue_t**) &s->queue, (queue_t *) CurrentTask);
+
+        queue_append((queue_t **)&s->queue, (queue_t *)CurrentTask);
         task_switch(Dispat);
         return 0;
     }
-
 }
 
-int sem_up(semaphore_t *s){
-    if(s->destruido == 1){
+int sem_up(semaphore_t *s)
+{
+    if (s->destroyed == 1)
+    {
         return -1;
-    } 
+    }
     task_t *first_task = s->queue;
     CurrentTask->atomic = 1;
     s->value++;
     /* opened a space in the semaphore, awakens the first task and send to the ready queue */
-    if(s->value <= 0){
+    if (s->value <= 0)
+    {
         task_resume(first_task, &s->queue);
     }
     CurrentTask->atomic = 0;
     return 0;
 }
 
-int sem_destroy(semaphore_t *s){
+int sem_destroy(semaphore_t *s)
+{
     task_t *queue = s->queue, *aux;
-    s->destruido = 1;
+    s->destroyed = 1;
     int elementos = s->value * (-1);
-    for(int i = 0; i < elementos; i++){
+    for (int i = 0; i < elementos; i++)
+    {
         aux = queue;
         queue = queue->next;
         task_resume(aux, &s->queue);
@@ -561,10 +616,12 @@ int sem_destroy(semaphore_t *s){
     return 0;
 }
 
-int mqueue_init(mqueue_t *queue, int max_msgs, int msg_size){
+int mqueue_init(mqueue_t *queue, int max_msgs, int msg_size)
+{
     queue->max_msgs = max_msgs;
     queue->msg_size = msg_size;
-    
+
+    /* start the buffer as a vector of max_msgs * msg_size bytes */
     queue->buffer = malloc(max_msgs * msg_size);
     queue->atual = 0;
 
@@ -576,54 +633,66 @@ int mqueue_init(mqueue_t *queue, int max_msgs, int msg_size){
     return 0;
 }
 
-int mqueue_send(mqueue_t *queue, void *msg){
+int mqueue_send(mqueue_t *queue, void *msg)
+{
     /* if there is no space in buffer, wait in queue */
-    if(sem_down(&queue->vagas) == -1)   return -1;
-    
+    if (sem_down(&queue->vagas) == -1)
+        return -1;
+
     /* if there is another task using the buffer, wait in queue*/
-    if(sem_down(&queue->buf) == -1)     return -1;
-    
+    if (sem_down(&queue->buf) == -1)
+        return -1;
+
     /* insert the message at the end of queue with memcpy */
     memcpy(queue->buffer + (queue->atual * queue->msg_size), msg, queue->msg_size);
     /* increment the number of messages in the buffer */
     queue->atual++;
     /* free the mutex */
-    if(sem_up(&queue->buf) == -1)       return -1;
-    
-    //if(sem_up(&queue->vagas) == -1)     return -1;
+    if (sem_up(&queue->buf) == -1)
+        return -1;
+
+    // if(sem_up(&queue->vagas) == -1)     return -1;
     /* there is one more item in the buffer to be consumed */
-    if(sem_up(&queue->items) == -1)     return -1;
+    if (sem_up(&queue->items) == -1)
+        return -1;
     return 0;
 }
 
-
-int mqueue_recv(mqueue_t *queue, void *msg){
+int mqueue_recv(mqueue_t *queue, void *msg)
+{
     /* if there is no item to be consumed, wait in queue*/
-    if(sem_down(&queue->items) == -1)   return -1;
+    if (sem_down(&queue->items) == -1)
+        return -1;
 
     /* wait in queue if there is anoter task using the buffer */
-    if(sem_down(&queue->buf) == -1)     return -1;
+    if (sem_down(&queue->buf) == -1)
+        return -1;
     /* use memcpy to copy the data in the first position in buffer to the pointer */
     memcpy(msg, queue->buffer, queue->msg_size);
-    
-    if(sem_up(&queue->buf) == -1)       return -1;
-    
+
+    if (sem_up(&queue->buf) == -1)
+        return -1;
+
     /* iterate the whole buffer changing the position of every item */
-    for(int i = 1; i < queue->atual; i++){
-        memcpy(queue->buffer + (i-1) * queue->msg_size, 
-        queue->buffer + i * queue->msg_size, queue->msg_size);
+    for (int i = 1; i < queue->atual; i++)
+    {
+        memcpy(queue->buffer + (i - 1) * queue->msg_size,
+               queue->buffer + i * queue->msg_size, queue->msg_size);
     }
     queue->atual--;
-    if(sem_up(&queue->vagas) == -1 )    return -1;
+    if (sem_up(&queue->vagas) == -1)
+        return -1;
 
     return 0;
 }
 
-int mqueue_msgs (mqueue_t *queue){
+int mqueue_msgs(mqueue_t *queue)
+{
     return queue->atual;
 }
 
-int mqueue_destroy(mqueue_t* queue){
+int mqueue_destroy(mqueue_t *queue)
+{
     /* destroy the semaphores */
     sem_destroy(&queue->vagas);
     sem_destroy(&queue->items);
@@ -633,5 +702,5 @@ int mqueue_destroy(mqueue_t* queue){
     free(queue->buffer);
     queue->buffer = NULL;
 
-    return 0;   
+    return 0;
 }
