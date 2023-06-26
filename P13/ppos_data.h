@@ -15,6 +15,11 @@
 #include <ucontext.h>		// biblioteca POSIX de trocas de contexto
 #include <signal.h>
 #include <sys/time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+//#include "ppos_disk.h"
 
 /* default value for stacksize */
 #define STACKSIZE 	64*1024
@@ -72,6 +77,7 @@ typedef struct task_t
   	unsigned int death_time; 		// indica o momento em que a tarefa foi encerrada
   	unsigned int running_time; 		// indica o tempo que a tarefa gastou sendo processada
   	unsigned int activations; 		// indica o numero de vezes que a tarefa ganhou o processador
+	int f;
 } task_t ;
 
 // estrutura que define um semáforo
@@ -108,4 +114,12 @@ typedef struct
 
 } mqueue_t ;
 
+
+
+void diskDriverBody(void * args);
+void wakeTask(task_t * task);
+void suspend();
+void readyTask(task_t *task);
+void imprime_lista_prontos();
+void insert_ready_queue(task_t *task);
 #endif

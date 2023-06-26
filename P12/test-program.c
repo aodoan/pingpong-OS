@@ -21,7 +21,7 @@ void prodBody (void * saida)
    while (1)
    {
       // sorteia um valor inteiro aleatorio
-      valor = random () % 1000 ;
+      valor =   () % 1000 ;
 
       // envia o valor inteiro na fila de saida
       if (mqueue_send (&queueValores, &valor) < 0)

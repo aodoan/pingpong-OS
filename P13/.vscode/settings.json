@@ -1,0 +1,9 @@
+{
+    "C_Cpp.errorSquiggles": "disabled",
+    "files.associations": {
+        "stdlib.h": "c",
+        "queue.h": "c",
+        "ppos.h": "c",
+        "ppos_disk.h": "c"
+    }
+}
