@@ -21,7 +21,7 @@ void prodBody (void * saida)
    while (1)
    {
       // sorteia um valor inteiro aleatorio
-      valor =   () % 1000 ;
+      valor = random () % 1000 ;
 
       // envia o valor inteiro na fila de saida
       if (mqueue_send (&queueValores, &valor) < 0)
@@ -97,6 +97,7 @@ int main (int argc, char *argv[])
    // cria as filas de mensagens (5 valores cada)
    mqueue_init (&queueValores, 5, sizeof(int)) ;
    mqueue_init (&queueRaizes,  5, sizeof(double)) ;
+
    // cria as threads
    task_init (&somador, somaBody, NULL) ;
    task_init (&cons[0], consBody, NULL) ;
